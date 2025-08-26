@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 🚗 Alerta Carro Seguro
 📌 Problema
 
@@ -43,3 +44,6 @@ Conta configurada no Firebase Console com:
     Realtime Database criado
     Cloud Messaging habilitado
     Chave de servidor (FCM) obtida
+=======
+# alerta_carro_seguro
+>>>>>>> 6220d15b6d9847ff26e7c015683fb469a6509dc0
