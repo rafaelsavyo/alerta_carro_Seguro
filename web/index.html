@@ -1,0 +1,86 @@
+<!DOCTYPE html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alerta Carro Seguro</title>
+</head>
+<body>
+  <h1>Alerta Carro Seguro</h1>
+  <p>Status: <span id="status">Clique para ativar as notificações.</span></p>
+  <button id="btnPermissao">Ativar notificações</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyACScCPi0hlnK8SWKEx6DKvObttA1n8I1Q",
+      authDomain: "carropttp.firebaseapp.com",
+      databaseURL: "https://carropttp-default-rtdb.firebaseio.com",
+      projectId: "carropttp",
+      storageBucket: "carropttp.appspot.com",
+      messagingSenderId: "799744092116",
+      appId: "1:799744092116:web:8c8c93e7300c72440b9841",
+      measurementId: "G-L70X5SW1LD"
+    };
+
+    const VAPID_PUBLIC_KEY = "BCGnTdASXi83BnW_qe1aitJRswCUPCyA0ajC8jVj72I-zxOzgcwDt1Asy7Co-RF1KHDds3scyLh8zF7cnRr9ics";
+
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+
+    const statusEl = document.getElementById("status");
+    const btn = document.getElementById("btnPermissao");
+
+    // Função de notificação em primeiro plano
+    onMessage(messaging, (payload) => {
+      alert(`🔔 ${payload?.notification?.title || "Alerta"}\n${payload?.notification?.body || ""}`);
+    });
+
+    async function ativarNotificacoes() {
+      try {
+        const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
+        await navigator.serviceWorker.ready;
+
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") {
+          statusEl.textContent = "Permissão negada.";
+          return;
+        }
+
+        const token = await getToken(messaging, {
+          vapidKey: VAPID_PUBLIC_KEY,
+          serviceWorkerRegistration: reg
+        });
+
+        if (!token) {
+          statusEl.textContent = "Token indisponível.";
+          return;
+        }
+
+        statusEl.textContent = "Pronto! Este navegador receberá os alertas.";
+        console.log("FCM token:", token);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Erro ao ativar notificações (veja o console).";
+      }
+    }
+
+    // Configuração para ouvir o Realtime Database para o alerta de temperatura
+    const db = getDatabase();
+    const alertsRef = ref(db, 'alerts');  // Observando a chave 'alerts' no Realtime Database
+    onValue(alertsRef, (snapshot) => {
+      const alertMessage = snapshot.val();
+      if (alertMessage) {
+        new Notification('Alerta Carro Seguro!', {
+          body: alertMessage
+        });
+      }
+    });
+
+    btn.addEventListener("click", ativarNotificacoes);
+  </script>
+</body>
+</html>
